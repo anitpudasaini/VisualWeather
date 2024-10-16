@@ -2,10 +2,8 @@ package com.weather.weatherapplication.screens
 
 import android.util.Log
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -15,15 +13,17 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,22 +38,27 @@ import androidx.compose.ui.unit.sp
 import com.weather.weatherapplication.MainActivity
 import com.weather.weatherapplication.R
 import com.weather.weatherapplication.WeatherConstants
+import com.weather.weatherapplication.models.WeatherViewModel
 import com.weather.weatherapplication.data.Repository
-import com.weather.weatherapplication.models.WeatherDay
+import com.weather.weatherapplication.data.WeatherDay
 import com.weather.weatherapplication.ui.theme.WeatherApplicationTheme
 
 class OneDay(private var caller: MainActivity) {
 
-    fun homeDisplay(vm: WeatherDay): Unit {
+    fun homeDisplay(vm: WeatherDay?, isBusy: Boolean): Unit {
         caller.setContent {
+            var busySpinner by rememberSaveable { mutableStateOf(isBusy) }
+            busySpinner = isBusy
+            Log.d(WeatherConstants.TAG, "isWeatherBusy, busySpinner: $busySpinner and isBusy: $isBusy")
             WeatherApplicationTheme {
-                Summary(vm, Modifier.padding(10.dp))
+                Summary(vm, busySpinner, Modifier.padding(10.dp))
             }
         }
     }
 
     @Composable
-    fun Summary(weatherDay: WeatherDay, modifier: Modifier = Modifier) {
+    fun Summary(weatherDay: WeatherDay?, busySpinner: Boolean, modifier: Modifier = Modifier) {
+
         val rowModifier = Modifier.padding(5.dp)
         Box(
             modifier.paint(
@@ -69,6 +74,7 @@ class OneDay(private var caller: MainActivity) {
                 var searchText by rememberSaveable { mutableStateOf("") }
                 WeatherTopAppBar()
                 Log.e(WeatherConstants.TAG, "here is : $weatherDay")
+
                 Row(rowModifier.fillMaxHeight(0.1F)) {
                     TextField(
                         value = searchText, onValueChange = { searchText = it }, modifier = Modifier
@@ -78,10 +84,13 @@ class OneDay(private var caller: MainActivity) {
                     Button(
                         onClick = { caller.getWeatherReport(searchText) },
                         shape = RoundedCornerShape(2.dp)
-                    ) { Text("Search", modifier = Modifier.requiredHeight(30.dp)) }
+                    ) { Text("Search", modifier = Modifier.requiredHeight(40.dp)) }
+                }
+                Row(rowModifier) {
+                    BusyIndicator(busySpinner)
                 }
 
-                if (weatherDay.days.size == 0) return
+                if (weatherDay == null || weatherDay.days.size == 0) return
                 Row(rowModifier) { Text("${weatherDay.days[0].datetime}") }
                 Row(rowModifier) { Text("${weatherDay.resolvedAddress}") }
                 Row(rowModifier) { Text("") }
@@ -109,6 +118,29 @@ class OneDay(private var caller: MainActivity) {
                     )
                 }
             }
+        }
+    }
+
+    @Composable
+    fun BusyIndicator(showBusyIndicator: Boolean) {
+        if (showBusyIndicator) {
+            Column(modifier = Modifier.fillMaxWidth(0.4f)) {}
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth(0.2f)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 14.dp,
+                    )
+                }
+            }
+            Column(modifier = Modifier.fillMaxWidth(0.4f)) {}
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.weather.weatherapplication.api
 
 import com.weather.weatherapplication.WeatherConstants
-import com.weather.weatherapplication.models.WeatherDay
+import com.weather.weatherapplication.data.WeatherDay
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
